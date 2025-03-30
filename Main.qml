@@ -18,6 +18,9 @@ Window {
                 showWinner("Вы победили!")
             } else if (winner === "Enemy") {
                 console.log("Enemy wins!");
+                enemyGrid.enabled = false;
+//                gameLogic.resetGridColors(userGrid, userRepeater)
+//                gameLogic.resetGridColors(enemyGrid, enemyRepeater)
                 showWinner("Вы проиграли!")
             }
         }
@@ -27,17 +30,27 @@ Window {
             infoPopup.open()
         }
 
-        onEnemyTurn: function(position) {
-            console.log("Enemy turn:", position)
+        onEnemyTurn: function(position, result) {
+//            console.log("Enemy turn:", position)
+            let cell = enemyGrid.children[position]
+            if (result === "miss") {
+                cell.color = "white"
+            }
         }
 
         onUserFieldUpdated: function(position, result) {
+//            console.log("onUserFieldUpdated")
             let cell = userGrid.children[position]
             if (result === "hit") {
                 cell.color = "red"
             } else if (result === "miss") {
                 cell.color = "white"
+                console.log("onUserFieldUpdated - color WHITE")
             }
+        }
+
+        onEnabledUserField: function(enabled) {
+            enemyGrid.enabled = enabled;
         }
 
         function resetGridColors(grid, repeater, isUserField) {
@@ -72,7 +85,7 @@ Window {
     }
 
     Column {
-        spacing: 20
+        spacing: 8
         anchors.centerIn: parent
 
         // Поле пользователя
@@ -146,6 +159,8 @@ Window {
                 if (!gameLogic.gameIsActive()) {
                     gameLogic.resetGridColors(enemyGrid, enemyRepeater)
                     gameLogic.startGame()
+                    enemyGrid.enabled = true;
+//                    userGrid.enabled
                 } else {
                     infoText.text = "Игра в процессе.\nРасположите корабли заново!"
                     infoPopup.open()

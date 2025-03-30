@@ -1,18 +1,21 @@
-#ifndef GAMEMODEL_H
-#define GAMEMODEL_H
+#pragma once
 
+#include <QMap>
 #include <QObject>
 #include <QSet>
 #include <QVector>
 
+#include "ShipsLocation.h"
+
 class GameModel : public QObject {
     Q_OBJECT
-    using Field = QVector<QVector<int>>;
+//    using Field = QVector<QVector<int>>;
+//    using MapShipCoordinate = QMap<std::pair<int, int>, QVector<std::pair<int, int>>>;
 
 public:
     explicit GameModel(QObject *parent = nullptr);
 
-    Q_INVOKABLE void placeShipsRandomly(Field& field);
+    Q_INVOKABLE void placeShipsRandomly(ShipLocation& location);
     Q_INVOKABLE void placeShipsRandomlyUser();
     Q_INVOKABLE bool placeShip(int position, int size); // Размещение корабля пользователя
     Q_INVOKABLE QString attackPosition(int position);   // Атака пользователя
@@ -25,21 +28,25 @@ public:
     Q_INVOKABLE bool gameIsActive() const;
 
 signals:
-    void enemyTurn(int position);                      // Ход противника
+    void enemyTurn(int position, QString result);                      // Ход противника
     void userFieldUpdated(int position, QString result); // Обновление поля пользователя
     void gameOver(QString winner); // Сигнал о завершении игры
+    void enabledUserField(bool isEnabled);
 
 private:
-    Field m_userField;      // Поле пользователя
-    Field m_enemyField;     // Поле противника
+    void clearField(ShipLocation& location);
+    QStringList getShipPositions(const ShipLocation& location) const;
+    void generateRandomShip(int size, ShipLocation& location);
+    void fillEnemyShipsCoordinates(ShipLocation& location, QVector<std::pair<int, int>>& coordinates);
+
+    bool areAllShipsDestroyed(const ShipLocation& location);
+    bool isAreaClear(int x, int y, int size, bool horizontal, ShipLocation& location) const;
+    bool isShipDestroyed(int x, int y, ShipLocation& location) const;
+    void markAreaAroundShip(int x, int y, ShipLocation& location);
+
+private:
+    ShipLocation m_userField;      // Поле пользователя
+    ShipLocation m_enemyField;     // Поле противника
     QSet<int> m_attackedPositions;          // Множество атакованных позиций
     bool m_gameIsActive;                    // Игра в процессе
-
-    QStringList getShipPositions(const Field& field) const;
-    void generateRandomShip(int size, Field& field);
-
-    bool areAllShipsDestroyed(const Field &field);
-    bool isAreaClear(int x, int y, int size, bool horizontal, Field& field) const;
 };
-
-#endif // GAMEMODEL_H
