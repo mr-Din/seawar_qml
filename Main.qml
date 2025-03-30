@@ -45,7 +45,7 @@ Window {
                 cell.color = "red"
             } else if (result === "miss") {
                 cell.color = "white"
-                console.log("onUserFieldUpdated - color WHITE")
+//                console.log("onUserFieldUpdated - color WHITE")
             }
         }
 

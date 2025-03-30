@@ -8,7 +8,8 @@ GameModel::GameModel(QObject *parent)
     : QObject(parent)
     , m_userField({ShipLocation::Field(10, QVector<int>(10, 0)), {}})
     , m_enemyField({ShipLocation::Field(10, QVector<int>(10, 0)), {}})
-    , m_gameIsActive(false) {}
+    , m_gameIsActive(false)
+    /*, m_isHuntingMode(false)*/ {}
 
 void GameModel::placeShipsRandomly(ShipLocation& location) {
     clearField(location);
@@ -133,12 +134,32 @@ QString GameModel::enemyAttackPosition(int position) {
         qDebug() << "Enemy hit at:" << x << y;
         if (isShipDestroyed(x, y, m_userField)) {
             qDebug() << "User ship destroyed!";
+            // Отключается режим добивания
+            /// TODO
+            m_huntingMode.clear();
             markAreaAroundShip(x, y, m_userField);
+        } else {
+            // Включается режим добивания
+            /// TODO
+            /// if (!m_huntingMode.isEnabled) {
+            /// m_huntingMode.isEnabled = true;
+            /// }
+            /// m_huntingMode.hitParts.push_back({x,y});
+            if (!m_huntingMode.isEnabled) {
+                m_huntingMode.isEnabled = true;
+            }
+            m_huntingMode.hitParts.push_back({x,y});
+            qDebug() << "m_huntingMode.hitParts.push_back({" << x << "," << y <<"})";
         }
 
         return "hit";
     } else {
         m_userField.field[x][y] = 3; // Промах
+        if (m_huntingMode.isEnabled) {
+            m_huntingMode.missParts.push_back({x,y});
+            qDebug() << "m_huntingMode.missParts.push_back({" << x << "," << y <<"})";
+        }
+
         qDebug() << "Enemy miss at:" << x << y;
         return "miss";
     }
@@ -155,12 +176,22 @@ void GameModel::startGame() {
 void GameModel::enemyAI() {
     emit enabledUserField(false);
     int position;
-    do {
-        qDebug() << "enemy attackes";
-        int x = QRandomGenerator::global()->bounded(10);
-        int y = QRandomGenerator::global()->bounded(10);
-        position = x * 10 + y;
-    } while (m_attackedPositions.contains(position)); // Проверяем, что позиция ещё не атакована
+    if (m_huntingMode.isEnabled) {
+        // Метод умного перебора вокруг точки предыдущего попадания
+        position = nextPointToAttack();
+        qDebug() << "position new = " << position;
+        if (!position) {
+            qDebug() << "ATTENTON! Algoritm is fault!";
+        }
+    } else {
+        do {
+            qDebug() << "enemy attackes";
+            int x = QRandomGenerator::global()->bounded(10);
+            int y = QRandomGenerator::global()->bounded(10);
+            position = x * 10 + y;
+        } while (m_attackedPositions.contains(position)); // Проверяем, что позиция ещё не атакована
+    }
+
 
     // Запоминаем атакованную позицию
     m_attackedPositions.insert(position);
@@ -206,6 +237,61 @@ QStringList GameModel::getFieldState() const {
 }
 
 bool GameModel::gameIsActive() const { return m_gameIsActive; }
+
+int GameModel::nextPointToAttack() const {
+    int position{0};
+    auto& hitParts = m_huntingMode.hitParts;
+    // Первое попадание - проходимся рандомно вокруг точки
+    if (hitParts.size() == 1) {
+        int x{}, y{};
+        do {
+            x = hitParts.front().first;
+            y = hitParts.front().second;
+            int i = QRandomGenerator::global()->bounded(-1, 2); // генерируем от -1 до 1
+            int j = (i == 0) ? QRandomGenerator::global()->bounded(-1, 2) : 0; // генерируем от -1 до 1
+            if (i == 0 && j == 0) {
+                continue; // Пропускаем саму точку
+            }
+            qDebug() << "i = " << i << " | j = " << j;
+            x += i;
+            y += j;
+            position = x*10 + y;
+        } while (!pointInsideField(x, y) || m_userField.field[x][y] == 2 || m_userField.field[x][y] == 3);
+
+        return position;
+    } else {
+        auto xStart = hitParts.front().first;
+        auto yStart = hitParts.front().second;
+        bool isHorisotal = xStart == hitParts[1].first;
+        for (size_t i = 0; i < hitParts.size(); ++i) {
+            if (isHorisotal) {
+                int yNew = hitParts[i].second;
+                if (pointInsideField(xStart, yNew + 1) && m_userField.field[xStart][yNew + 1] != 2 && m_userField.field[xStart][yNew + 1] != 3) {
+                    position = xStart*10 + (yNew + 1);
+                    return position;
+                } else if (pointInsideField(xStart, yNew - 1) && m_userField.field[xStart][yNew - 1] != 2 && m_userField.field[xStart][yNew - 1] != 3) {
+                    position = xStart*10 + (yNew - 1);
+                    return position;
+                }
+            } else {
+                int xNew = hitParts[i].first;
+                if (pointInsideField(xNew + 1, yStart) && m_userField.field[xNew + 1][yStart] != 2 && m_userField.field[xNew + 1][yStart] != 3) {
+                    position = (xNew + 1)*10 + yStart;
+                    return position;
+                } else if (pointInsideField(xNew - 1, yStart) && m_userField.field[xNew - 1][yStart] != 2 && m_userField.field[xNew - 1][yStart] != 3) {
+                    position =(xNew - 1)*10 + yStart;
+                    return position;
+                }
+            }
+        }
+    }
+
+    return position;
+}
+
+bool GameModel::pointInsideField(int x, int y) const {
+    return x >= 0 && x < 10 && y >= 0 && y < 10;
+}
 
 void GameModel::clearField(ShipLocation& location) {
     for (auto &row : location.field) {
@@ -280,13 +366,17 @@ void GameModel::markAreaAroundShip(int x, int y, ShipLocation& location) {
                     int newY = yy + j;
 
                     // Проверяем границы
-                    if (newX >= 0 && newX < 10 && newY >= 0 && newY < 10 && location.field[newX][newY] != 2) {
+                    if (pointInsideField(newX, newY) && location.field[newX][newY] != 2) {
                         location.field[newX][newY] = 3; // Заполняем 3 - промах (белая клетка)
                         int position = newX * 10 + newY;
-//                        emit enemyTurn(position, "miss");
-                        location == m_enemyField
-                            ? emit enemyTurn(position, "miss")
-                            : emit userFieldUpdated(position, "miss");
+
+                        // Необходимо обновить m_attackedPositions!
+                        if (location == m_userField) {
+                            m_attackedPositions.insert(position);
+                            emit userFieldUpdated(position, "miss");
+                        } else {
+                            emit enemyTurn(position, "miss");
+                        }
                     }
                 }
             }

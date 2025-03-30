@@ -11,6 +11,16 @@ class GameModel : public QObject {
     Q_OBJECT
 //    using Field = QVector<QVector<int>>;
 //    using MapShipCoordinate = QMap<std::pair<int, int>, QVector<std::pair<int, int>>>;
+    struct HuntingMode {
+        bool isEnabled{false};
+        QVector<std::pair<int, int>> hitParts{};
+        QVector<std::pair<int, int>> missParts{};
+        void clear() {
+            isEnabled = false;
+            hitParts.clear();
+            missParts.clear();
+        }
+    };
 
 public:
     explicit GameModel(QObject *parent = nullptr);
@@ -34,6 +44,8 @@ signals:
     void enabledUserField(bool isEnabled);
 
 private:
+    int nextPointToAttack() const;
+    bool pointInsideField(int x, int y) const;
     void clearField(ShipLocation& location);
     QStringList getShipPositions(const ShipLocation& location) const;
     void generateRandomShip(int size, ShipLocation& location);
@@ -49,4 +61,6 @@ private:
     ShipLocation m_enemyField;     // Поле противника
     QSet<int> m_attackedPositions;          // Множество атакованных позиций
     bool m_gameIsActive;                    // Игра в процессе
+//    bool m_isHuntingMode;
+    HuntingMode m_huntingMode;
 };
