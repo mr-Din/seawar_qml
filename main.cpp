@@ -16,11 +16,18 @@ int main(int argc, char *argv[])
     GameModel gameModel;
     engine.rootContext()->setContextProperty("gameLogic", &gameModel);
 
-    const QUrl url(u"qrc:/seawar/Main.qml"_qs);
+    // Загрузка главного меню
+    const QUrl url(u"qrc:/seawar/MainMenu.qml"_qs);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
         &app, []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
     engine.load(url);
+
+//    const QUrl url(u"qrc:/seawar/Main.qml"_qs);
+//    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
+//        &app, []() { QCoreApplication::exit(-1); },
+//        Qt::QueuedConnection);
+//    engine.load(url);
 
     return app.exec();
 }

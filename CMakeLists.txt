@@ -19,6 +19,9 @@ qt_add_qml_module(appseawar
     VERSION 1.0
     QML_FILES Main.qml
     SOURCES ShipsLocation.h
+    QML_FILES MainMenu.qml
+    QML_FILES Explosion.qml
+    QML_FILES Splashing.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

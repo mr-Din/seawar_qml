@@ -9,7 +9,7 @@ GameModel::GameModel(QObject *parent)
     , m_userField({ShipLocation::Field(10, QVector<int>(10, 0)), {}})
     , m_enemyField({ShipLocation::Field(10, QVector<int>(10, 0)), {}})
     , m_gameIsActive(false)
-    /*, m_isHuntingMode(false)*/ {}
+    , m_withHuntingMode(false) {}
 
 void GameModel::placeShipsRandomly(ShipLocation& location) {
     clearField(location);
@@ -117,9 +117,14 @@ QString GameModel::attackPosition(int position) {
             emit gameOver("Player");
             m_gameIsActive = false;
         }
+        emit userTurn(position, "hit");
         return "hit";
+    } else if (m_enemyField.field[x][y] == 2 || m_enemyField.field[x][y] == 3) {
+        // Если игрок повторно кликает на позицию, которая помечена как "hit" или "miss"
+        return "doubleClick";
     } else {
         m_enemyField.field[x][y] = 3; // Промах
+        emit userTurn(position, "miss");    // Информируем qml для отрисовки
         qDebug() << "Miss at:" << x << y;
         return "miss";
     }
@@ -135,21 +140,22 @@ QString GameModel::enemyAttackPosition(int position) {
         if (isShipDestroyed(x, y, m_userField)) {
             qDebug() << "User ship destroyed!";
             // Отключается режим добивания
-            /// TODO
             m_huntingMode.clear();
-            markAreaAroundShip(x, y, m_userField);
+
+            QTimer::singleShot(500, this, [=]() { markAreaAroundShip(x, y, m_userField); });
+
+            // Высплывающее сообщение, что корабль уничтожен
+            QTimer::singleShot(100, this, [=]() { emit showMessage("Убит"); });
+//            emit showMessage("Убит");
         } else {
             // Включается режим добивания
-            /// TODO
-            /// if (!m_huntingMode.isEnabled) {
-            /// m_huntingMode.isEnabled = true;
-            /// }
-            /// m_huntingMode.hitParts.push_back({x,y});
-            if (!m_huntingMode.isEnabled) {
+            if (!m_huntingMode.isEnabled && m_withHuntingMode) {
                 m_huntingMode.isEnabled = true;
             }
             m_huntingMode.hitParts.push_back({x,y});
             qDebug() << "m_huntingMode.hitParts.push_back({" << x << "," << y <<"})";
+            /// QTimer::singleShot(750, this, [=]() { emit showMessage("Ранен"); });
+//            emit showMessage("Ранен");
         }
 
         return "hit";
@@ -170,11 +176,11 @@ void GameModel::startGame() {
     m_enemyField.mapShipsCoordinates.clear();
     placeShipsRandomly(m_enemyField);
     m_attackedPositions.clear();
-    enemyAI();
+
+    enemyAIWithTimeOut();
 }
 
 void GameModel::enemyAI() {
-    emit enabledUserField(false);
     int position;
     if (m_huntingMode.isEnabled) {
         // Метод умного перебора вокруг точки предыдущего попадания
@@ -198,19 +204,24 @@ void GameModel::enemyAI() {
 
     // Атакуем выбранную позицию
     QString result = enemyAttackPosition(position);
-    emit userFieldUpdated(position, result);
+    emit enemyTurn(position, result);
 
     if (areAllShipsDestroyed(m_userField)) {
         clearField(m_userField);    // На всякий случай
         clearField(m_enemyField);    // На всякий случай
         emit gameOver("Enemy");
         m_gameIsActive = false;
+        emit enabledEnemyField(true);
     } else if (result == "hit") {
-//        QThread().sleep(2);
-//        QTimer::singleShot(1000, this, SLOT(enemyAI()));
-        enemyAI();
+        QTimer::singleShot(800, this, &GameModel::enemyAI);
+    } else {
+        emit enabledEnemyField(true);
     }
-    emit enabledUserField(true);
+}
+
+void GameModel::enemyAIWithTimeOut() {
+    emit enabledEnemyField(false);
+    QTimer::singleShot(1000, this, &GameModel::enemyAI);
 }
 
 QStringList GameModel::getEnemyShipPositions() const  {
@@ -237,6 +248,8 @@ QStringList GameModel::getFieldState() const {
 }
 
 bool GameModel::gameIsActive() const { return m_gameIsActive; }
+
+void GameModel::setHuntingMode(bool enabled) { m_withHuntingMode = enabled; }
 
 int GameModel::nextPointToAttack() const {
     int position{0};
@@ -375,7 +388,7 @@ void GameModel::markAreaAroundShip(int x, int y, ShipLocation& location) {
                             m_attackedPositions.insert(position);
                             emit userFieldUpdated(position, "miss");
                         } else {
-                            emit enemyTurn(position, "miss");
+                            emit enemyFieldUpdated(position, "miss");
                         }
                     }
                 }

@@ -9,8 +9,6 @@
 
 class GameModel : public QObject {
     Q_OBJECT
-//    using Field = QVector<QVector<int>>;
-//    using MapShipCoordinate = QMap<std::pair<int, int>, QVector<std::pair<int, int>>>;
     struct HuntingMode {
         bool isEnabled{false};
         QVector<std::pair<int, int>> hitParts{};
@@ -32,16 +30,21 @@ public:
     Q_INVOKABLE QString enemyAttackPosition(int position);
     Q_INVOKABLE void startGame();                      // Начало игры
     Q_INVOKABLE void enemyAI();
+    Q_INVOKABLE void enemyAIWithTimeOut();
     Q_INVOKABLE QStringList getEnemyShipPositions() const;
     Q_INVOKABLE QStringList getUserShipPositions() const;
     Q_INVOKABLE QStringList getFieldState() const;
     Q_INVOKABLE bool gameIsActive() const;
+    Q_INVOKABLE void setHuntingMode(bool enabled);
 
 signals:
     void enemyTurn(int position, QString result);                      // Ход противника
-    void userFieldUpdated(int position, QString result); // Обновление поля пользователя
+    void userTurn(int position, QString result);                      // Ход пользователя
+    void enemyFieldUpdated(int position, QString result); // Обновление поля противника
+    void userFieldUpdated(int position, QString result);  // Обновление поля пользователя
     void gameOver(QString winner); // Сигнал о завершении игры
-    void enabledUserField(bool isEnabled);
+    void enabledEnemyField(bool isEnabled);
+    void showMessage(QString message);
 
 private:
     int nextPointToAttack() const;
@@ -61,6 +64,6 @@ private:
     ShipLocation m_enemyField;     // Поле противника
     QSet<int> m_attackedPositions;          // Множество атакованных позиций
     bool m_gameIsActive;                    // Игра в процессе
-//    bool m_isHuntingMode;
     HuntingMode m_huntingMode;
+    bool m_withHuntingMode;
 };
