@@ -110,6 +110,7 @@ QString GameModel::attackPosition(int position) {
         // Проверяем, уничтожен ли корабль
         if (isShipDestroyed(x, y, m_enemyField)) {
             qDebug() << "Ship destroyed!";
+            emit soundBoom();
             markAreaAroundShip(x, y, m_enemyField);
         }
 
@@ -153,7 +154,6 @@ QString GameModel::enemyAttackPosition(int position) {
                 m_huntingMode.isEnabled = true;
             }
             m_huntingMode.hitParts.push_back({x,y});
-            qDebug() << "m_huntingMode.hitParts.push_back({" << x << "," << y <<"})";
             /// QTimer::singleShot(750, this, [=]() { emit showMessage("Ранен"); });
 //            emit showMessage("Ранен");
         }
@@ -163,7 +163,6 @@ QString GameModel::enemyAttackPosition(int position) {
         m_userField.field[x][y] = 3; // Промах
         if (m_huntingMode.isEnabled) {
             m_huntingMode.missParts.push_back({x,y});
-            qDebug() << "m_huntingMode.missParts.push_back({" << x << "," << y <<"})";
         }
 
         qDebug() << "Enemy miss at:" << x << y;
@@ -185,7 +184,6 @@ void GameModel::enemyAI() {
     if (m_huntingMode.isEnabled) {
         // Метод умного перебора вокруг точки предыдущего попадания
         position = nextPointToAttack();
-        qDebug() << "position new = " << position;
         if (!position) {
             qDebug() << "ATTENTON! Algoritm is fault!";
         }
@@ -265,7 +263,6 @@ int GameModel::nextPointToAttack() const {
             if (i == 0 && j == 0) {
                 continue; // Пропускаем саму точку
             }
-            qDebug() << "i = " << i << " | j = " << j;
             x += i;
             y += j;
             position = x*10 + y;

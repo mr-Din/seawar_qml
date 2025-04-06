@@ -15,7 +15,7 @@ Rectangle {
         to: 0
         duration: 500
         onRunningChanged: {
-            console.log("Width animation running:", running);
+//            console.log("Width animation running:", running);
         }
     }
 
@@ -25,7 +25,7 @@ Rectangle {
         to: 0 // Максимальная высота
         duration: 500
         onRunningChanged: {
-            console.log("Height animation running:", running);
+//            console.log("Height animation running:", running);
         }
     }
 
@@ -35,7 +35,7 @@ Rectangle {
         to: 0
         duration: 500
         onRunningChanged: {
-            console.log("Opacity animation running:", running);
+//            console.log("Opacity animation running:", running);
             if (!running) {
                 parent.z = 0
 //                explosion.destroy(); // Удаляем вспышку после завершения анимации

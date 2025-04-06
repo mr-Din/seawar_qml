@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>media/kaplya_1.wav</file>
+        <file>media/kaplya_1.mp3</file>
+        <file>media/kaplya_2.wav</file>
+        <file>media/kaplya_3.wav</file>
+        <file>media/noimage.svg</file>
+        <file>media/boom_1.wav</file>
+        <file>media/boom_2.wav</file>
+    </qresource>
+</RCC>

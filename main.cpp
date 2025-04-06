@@ -1,6 +1,8 @@
+#include <QFile>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QStringLiteral>
 
 #include "GameModel.h"
 
@@ -17,7 +19,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("gameLogic", &gameModel);
 
     // Загрузка главного меню
-    const QUrl url(u"qrc:/seawar/MainMenu.qml"_qs);
+    const QUrl url(QStringLiteral(u"qrc:/seawar/MainMenu.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
         &app, []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);

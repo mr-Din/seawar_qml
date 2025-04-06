@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import QtMultimedia
 import GameLogicModule 1.0
 
 Window {
@@ -30,9 +32,11 @@ Window {
             let cell = userGrid.children[position]
             if (result === "hit") {
                 cell.color = "#e74c3c"
+                bangSound.play()
                 createExplosion(cell)
             } else if (result === "miss") {
                 cell.color = "#898d91"
+                waterDropSound.play()
                 createSplash(cell)
             }
         }
@@ -76,10 +80,15 @@ Window {
         }
 
         function onShowMessage(message) {
+            boomSound.play()
             messageText.text = message; // Устанавливаем текст сообщения
             messagePopup.parent = userGrid;
             messagePopup.open(); // Показываем всплывающее окно
             messageTimer.restart(); // Запускаем таймер
+        }
+
+        function onSoundBoom() {
+            boomSound.play()
         }
     }
 
@@ -108,6 +117,7 @@ Window {
 
                     MouseArea {
                         anchors.fill: parent
+
                         onClicked: {
                             if (gameLogic.placeShip(index, 1)) {
                                 parent.color = "#08213b" // Синий цвет для кораблей
@@ -142,8 +152,10 @@ Window {
                         onClicked: {
                             let result = gameLogic.attackPosition(index)
                             if (result === "hit") {
-                                //
+                                bangSound.play()
                             } else if (result === "miss") {
+                                console.log("Where is sound effect!")
+                                waterDropSound.play()
                                 gameLogic.enemyAIWithTimeOut()
                             } else if (result === "doubleClick") {
                                 //
@@ -197,6 +209,7 @@ Window {
                 }
                 Layout.fillWidth: true // Растягиваем кнопку по ширине
                 Layout.preferredWidth: 150 // Минимальная ширина кнопки
+
                 onClicked: {
                     resetGridColors(userGrid, userRepeater)
                     gameLogic.placeShipsRandomlyUser()
@@ -272,7 +285,6 @@ Window {
         dim: false
         width: 250 // Начальная ширина (будет увеличиваться)
         height: 250 // Начальная высота (будет увеличиваться)
-//        opacity: 0.5 // Начальная прозрачность
 
         anchors.centerIn: parent
         background: Rectangle {
@@ -294,8 +306,6 @@ Window {
                 horizontalAlignment: Text.AlignHCenter
             }
         }
-
-//        NumberAnimation on opacity { from: 0.8; to: 0; duration: 300 } // Плавное появление
     }
 
     Popup {
@@ -347,11 +357,26 @@ Window {
         active: false
     }
 
-    function createExplosion(cell) {
-        console.log("Creating explosion at:", cell.index);
+    SoundEffect {
+        id: waterDropSound
+        source: "qrc:/media/kaplya_2.wav"
+        volume: 1.0
+    }
 
+    SoundEffect {
+        id: bangSound
+        source: "qrc:/media/boom_1.wav"
+        volume: 1.0
+    }
+
+    SoundEffect {
+        id: boomSound
+        source: "qrc:/media/boom_2.wav"
+        volume: 0.7
+    }
+
+    function createExplosion(cell) {
         if (!cell || !userGrid) {
-            console.error("Cell or userGrid is invalid!");
             return
         }
 
@@ -364,13 +389,12 @@ Window {
             explosionItem.parent = cell // Родительский элемент - ячейка
             explosionItem.anchors.centerIn = cell // Привязываем к центру ячейки
         } else {
-            console.error("Ошибка загрузки взрыва:", explosionLoader.errorString)
+//            console.error("Ошибка загрузки взрыва:", explosionLoader.errorString)
         }
     }
 
     function createSplash(cell) {
         if (!cell || !userGrid) {
-            console.error("Cell or userGrid is invalid!");
             return
         }
 
@@ -383,7 +407,7 @@ Window {
             explosionItem.parent = cell // Родительский элемент - ячейка
             explosionItem.anchors.centerIn = cell // Привязываем к центру ячейки
         } else {
-            console.error("Ошибка загрузки взрыва:", explosionLoader.errorString)
+//            console.error("Ошибка загрузки взрыва:", explosionLoader.errorString)
         }
     }
 

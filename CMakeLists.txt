@@ -4,14 +4,17 @@ project(seawar VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Quick Multimedia)
 
 qt_standard_project_setup()
+
+set(CMAKE_AUTORCC ON)
 
 qt_add_executable(appseawar
     main.cpp
     GameModel.h
     GameModel.cpp
+    media.qrc
 )
 
 qt_add_qml_module(appseawar
@@ -36,7 +39,7 @@ set_target_properties(appseawar PROPERTIES
 )
 
 target_link_libraries(appseawar
-    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Quick; Qt6::Multimedia
 )
 
 include(GNUInstallDirs)

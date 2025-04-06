@@ -45,6 +45,7 @@ signals:
     void gameOver(QString winner); // Сигнал о завершении игры
     void enabledEnemyField(bool isEnabled);
     void showMessage(QString message);
+    void soundBoom();
 
 private:
     int nextPointToAttack() const;
